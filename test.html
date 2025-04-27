@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Metrics Dashboard</title>
+    <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh; /* Make the body take the full viewport height */
+            margin: 0; /* Remove default margin */
+        }
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            width: 200px;
+            border-right: 1px solid #ccc;
+            height: 100%; /* Make the tabs section take full height */
+        }
+
+        .page-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .tabs button {
+            padding: 10px;
+            text-align: left;
+            border: none;
+            background: #f1f1f1;
+            cursor: pointer;
+            outline: none;
+        }
+        .tabs button.active {
+            background: #4CAF50; /* Change background to green */
+            color: white; /* Change text color to white */
+            font-weight: bold;
+            border-left: 6px solid #2E7D32; /* Make the left border thicker for emphasis */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); /* Add an inset shadow for depth */
+        }
+        .tab-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .tab-content > div {
+            display: none;
+        }
+        .tab-content > div.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <div class="page-header">Dashboard</div>
+        <button class="tab-link active" data-tab="table1">Table 1</button>
+        <button class="tab-link" data-tab="table2">Table 2</button>
+        <button class="tab-link" data-tab="table3">Table 3</button>
+        <button class="tab-link" data-tab="table4">Table 4</button>
+    </div>
+    <div class="tab-content">
+        <div id="table1" class="tab-pane active"></div>
+        <div id="table2" class="tab-pane"></div>
+        <div id="table3" class="tab-pane"></div>
+        <div id="table4" class="tab-pane"></div>
+    </div>
+
+    <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+    <script>
+        // Example CSV data
+        const csvData1 = `Name,Age,Score\nAlice,30,85\nBob,25,90`;
+        const csvData2 = `Name,Department,Salary\nJohn,HR,50000\nJane,IT,60000`;
+        const csvData3 = `Product,Price,Stock\nLaptop,1000,50\nPhone,500,200`;
+        const csvData4 = `City,Population,Area\nNew York,8000000,468\nLos Angeles,4000000,503`;
+
+        // CSV parsing function
+        function parseCSV(csv) {
+            const [headerLine, ...lines] = csv.split("\n");
+            const headers = headerLine.split(",");
+            return lines.map(line => {
+                const values = line.split(",");
+                return headers.reduce((obj, header, index) => {
+                    obj[header] = values[index];
+                    return obj;
+                }, {});
+            });
+        }
+
+        // Initialize Tabulator tables lazily
+        const initializedTables = new Set();
+
+        document.querySelectorAll('.tab-link').forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent default link behavior
+
+                const tabId = button.dataset.tab;
+                window.location.hash = tabId; // Update URL hash
+
+                document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+                button.classList.add('active');
+                const activePane = document.getElementById(tabId);
+                activePane.classList.add('active');
+
+                // Initialize Tabulator table if not already initialized
+                if (!initializedTables.has(tabId)) {
+                    const csvData = eval(`csvData${tabId.replace('table', '')}`); // Dynamically get the CSV data
+                    new Tabulator(`#${tabId}`, { data: parseCSV(csvData), autoColumns: true, layout: "fitColumns" });
+                    initializedTables.add(tabId);
+                }
+            });
+        });
+
+        // Handle tab activation based on URL hash
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.substring(1); // Get hash without '#'
+            if (hash) {
+                const targetButton = document.querySelector(`.tab-link[data-tab="${hash}"]`);
+                if (targetButton) {
+                    targetButton.click(); // Simulate click to activate tab
+                }
+            } else {
+                // Default to the first tab if no hash is present
+                document.querySelector('.tab-link').click();
+            }
+        });
+    </script>
+</body>
+</html>
