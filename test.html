@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Metrics Dashboard</title>
+    <title>TEST</title>
     <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
     <style>
         body {
@@ -64,26 +64,29 @@
 </head>
 <body>
     <div class="tabs-container">
-        <div class="page-header">Dashboard</div>
-        <button class="tab-link active" data-tab="table1">Table 1</button>
-        <button class="tab-link" data-tab="table2">Table 2</button>
-        <button class="tab-link" data-tab="table3">Table 3</button>
-        <button class="tab-link" data-tab="table4">Table 4</button>
+        <div class="page-header">TEST</div>
+        <button class="tab-link active" data-tab="logFilesTable">Log Files</button>
+        <button class="tab-link" data-tab="dataDependenciesTable">Data Dependencies</button>
+        <button class="tab-link" data-tab="tradesTable">Trades</button>
+        <button class="tab-link" data-tab="metricsTable">Metrics</button>
+        <button class="tab-link" data-tab="mdmKeysTable">MDM Keys</button>
     </div>
     <div class="tab-content">
-        <div id="table1" class="tab-pane active"></div>
-        <div id="table2" class="tab-pane"></div>
-        <div id="table3" class="tab-pane"></div>
-        <div id="table4" class="tab-pane"></div>
+        <div id="logFilesTable" class="tab-pane active"></div>
+        <div id="dataDependenciesTable" class="tab-pane"></div>
+        <div id="tradesTable" class="tab-pane"></div>
+        <div id="metricsTable" class="tab-pane"></div>
+        <div id="mdmKeysTable" class="tab-pane"></div>
     </div>
 
     <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
     <script>
         // Example CSV data
-        const csvData1 = `Name,Age,Score\nAlice,30,85\nBob,25,90`;
-        const csvData2 = `Name,Department,Salary\nJohn,HR,50000\nJane,IT,60000`;
-        const csvData3 = `Product,Price,Stock\nLaptop,1000,50\nPhone,500,200`;
-        const csvData4 = `City,Population,Area\nNew York,8000000,468\nLos Angeles,4000000,503`;
+        const logFilesData = `Name,Age,Score\nAlice,30,85\nBob,25,90`;
+        const dataDependenciesData = `Name,Department,Salary\nJohn,HR,50000\nJane,IT,60000`;
+        const tradesData = `Product,Price,Stock\nLaptop,1000,50\nPhone,500,200`;
+        const metricsData = `City,Population,Area\nNew York,8000000,468\nLos Angeles,4000000,503`;
+        const mdmKeysData = `Key,Description,Value\nMDM001,Market Data Key 1,12345\nMDM002,Market Data Key 2,67890\nMDM003,Market Data Key 3,54321`;
 
         // CSV parsing function
         function parseCSV(csv) {
@@ -117,9 +120,9 @@
 
                 // Initialize Tabulator table if not already initialized
                 if (!initializedTables.has(tabId)) {
-                    const csvData = eval(`csvData${tabId.replace('table', '')}`); // Dynamically get the CSV data
+                    const data = eval(`${tabId.replace('Table', '')}Data`); // Dynamically get the data
                     new Tabulator(`#${tabId}`, { 
-                        data: parseCSV(csvData), 
+                        data: parseCSV(data), 
                         autoColumns: true, 
                         layout: "fitColumns", 
                         responsiveLayout: "collapse" // Enable responsive resizing
