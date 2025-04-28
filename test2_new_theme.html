@@ -104,6 +104,7 @@
             <button class="tab-link" data-tab="tradesTable">Trades</button>
             <button class="tab-link" data-tab="metricsTable">Metrics</button>
             <button class="tab-link" data-tab="mdmKeysTable">MDM Keys</button>
+            <button class="tab-link" data-tab="downloadsTab">Downloads</button>
         </div>
         <div class="main-content">
             <div class="build-info">
@@ -142,6 +143,18 @@
                         <h3>MDM Keys</h3>
                     </div>
                     <div class="table-content"></div>
+                </div>
+                <div id="downloadsTab" class="tab-pane">
+                    <div class="table-header">
+                        <h3>Downloads</h3>
+                    </div>
+                    <ul>
+                        <li><a href="#" id="downloadLogFiles">LogFiles.csv</a></li>
+                        <li><a href="#" id="downloadDataDependencies">DataDependencies.csv</a></li>
+                        <li><a href="#" id="downloadTrades">Trades.csv</a></li>
+                        <li><a href="#" id="downloadMetrics">Metrics.csv</a></li>
+                        <li><a href="#" id="downloadMdmKeys">MdmKeys.csv</a></li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -216,6 +229,39 @@
                 // Default to the first tab if no hash is present
                 document.querySelector('.tab-link').click();
             }
+        });
+
+        function downloadCSV(filename, content) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        document.getElementById('downloadLogFiles').addEventListener('click', (event) => {
+            event.preventDefault();
+            downloadCSV('LogFiles.csv', logFilesData);
+        });
+
+        document.getElementById('downloadDataDependencies').addEventListener('click', (event) => {
+            event.preventDefault();
+            downloadCSV('DataDependencies.csv', dataDependenciesData);
+        });
+
+        document.getElementById('downloadTrades').addEventListener('click', (event) => {
+            event.preventDefault();
+            downloadCSV('Trades.csv', tradesData);
+        });
+
+        document.getElementById('downloadMetrics').addEventListener('click', (event) => {
+            event.preventDefault();
+            downloadCSV('Metrics.csv', metricsData);
+        });
+
+        document.getElementById('downloadMdmKeys').addEventListener('click', (event) => {
+            event.preventDefault();
+            downloadCSV('MdmKeys.csv', mdmKeysData);
         });
     </script>
 </body>
