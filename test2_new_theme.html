@@ -26,30 +26,36 @@
             }
             .sidebar {
                 width: 250px;
-                background-color: #34495e;
+                background-color: #3a4b5c; /* Lighten the sidebar background color */
                 color: white;
                 display: flex;
                 flex-direction: column;
                 padding: 10px;
             }
             .sidebar .tab-link {
-                background: none;
-                border: none;
+                background-color: #4a5b6c; /* Make the tab background color more distinct */
+                border: 1px solid #2c3e50; 
+                border-radius: 4px; 
                 color: white;
                 text-align: left;
                 padding: 10px;
                 cursor: pointer;
                 font-size: 16px;
-                transition: background-color 0.3s, font-weight 0.3s;
+                margin-bottom: 5px; 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+                transition: background-color 0.3s, font-weight 0.3s, transform 0.2s, box-shadow 0.2s;
             }
             .sidebar .tab-link:hover {
-                background-color: #2c3e50;
+                background-color: inherit; /* Remove hover background change */
+                transform: none; /* Remove scaling effect */
+                box-shadow: none; /* Remove shadow enhancement */
             }
             .sidebar .tab-link.active {
                 background-color: #1abc9c;
                 font-weight: bold;
                 color: #ffffff;
                 border-left: 4px solid #16a085;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
             }
             .main-content {
                 flex: 1;
@@ -99,12 +105,12 @@
     <div class="header">TeamCity Build Page</div>
     <div class="container">
         <div class="sidebar">
-            <button class="tab-link active" data-tab="logFilesTable">Log Files</button>
-            <button class="tab-link" data-tab="dataDependenciesTable">Data Dependencies</button>
-            <button class="tab-link" data-tab="tradesTable">Trades</button>
-            <button class="tab-link" data-tab="metricsTable">Metrics</button>
-            <button class="tab-link" data-tab="mdmKeysTable">MDM Keys</button>
-            <button class="tab-link" data-tab="downloadsTab">Downloads</button>
+            <button class="tab-link active" type="button" data-tab="logFilesTable">Log Files</button>
+            <button class="tab-link" type="button" data-tab="dataDependenciesTable">Data Dependencies</button>
+            <button class="tab-link" type="button" data-tab="tradesTable">Trades</button>
+            <button class="tab-link" type="button" data-tab="metricsTable">Metrics</button>
+            <button class="tab-link" type="button" data-tab="mdmKeysTable">MDM Keys</button>
+            <button class="tab-link" type="button" data-tab="downloadsTab">Downloads</button>
         </div>
         <div class="main-content">
             <div class="build-info">
