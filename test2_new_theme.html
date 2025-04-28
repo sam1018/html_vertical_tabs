@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST</title>
+    <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
+    <style>
+            body {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                margin: 0;
+                font-family: Arial, sans-serif;
+            }
+            .header {
+                background-color: #2c3e50;
+                color: white;
+                padding: 10px 20px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .container {
+                display: flex;
+                flex: 1;
+            }
+            .sidebar {
+                width: 250px;
+                background-color: #34495e;
+                color: white;
+                display: flex;
+                flex-direction: column;
+                padding: 10px;
+            }
+            .sidebar .tab-link {
+                background: none;
+                border: none;
+                color: white;
+                text-align: left;
+                padding: 10px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s, font-weight 0.3s;
+            }
+            .sidebar .tab-link:hover {
+                background-color: #2c3e50;
+            }
+            .sidebar .tab-link.active {
+                background-color: #1abc9c;
+                font-weight: bold;
+                color: #ffffff;
+                border-left: 4px solid #16a085;
+            }
+            .main-content {
+                flex: 1;
+                padding: 20px;
+                background-color: #ecf0f1;
+                overflow-y: auto;
+            }
+            .build-info {
+                margin-bottom: 20px;
+                padding: 10px;
+                background-color: #f1f1f1;
+                border: 1px solid #e0e0e0;
+            }
+            .build-info h2 {
+                margin: 0 0 10px 0;
+                font-size: 18px;
+                color: #000;
+            }
+            .build-info p {
+                margin: 5px 0;
+            }
+            .build-info a {
+                color: #007BFF;
+                text-decoration: none;
+            }
+            .build-info a:hover {
+                text-decoration: underline;
+            }
+            .tab-pane {
+                display: none;
+                padding-top: 20px;
+            }
+            .tab-pane.active {
+                display: block;
+            }
+            .table-header {
+                margin-bottom: 10px;
+                font-size: 20px;
+                color: #333;
+            }
+            .table-content {
+                padding-top: 10px;
+            }
+        </style>
+</head>
+<body>
+    <div class="header">TeamCity Build Page</div>
+    <div class="container">
+        <div class="sidebar">
+            <button class="tab-link active" data-tab="logFilesTable">Log Files</button>
+            <button class="tab-link" data-tab="dataDependenciesTable">Data Dependencies</button>
+            <button class="tab-link" data-tab="tradesTable">Trades</button>
+            <button class="tab-link" data-tab="metricsTable">Metrics</button>
+            <button class="tab-link" data-tab="mdmKeysTable">MDM Keys</button>
+        </div>
+        <div class="main-content">
+            <div class="build-info">
+                <h2>Build Info</h2>
+                <p><strong>Build:</strong> win-vs2019-x64-release</p>
+                <p><strong>Nightly:</strong> No</p>
+                <p><strong>Build link:</strong> <a href="https://teamcity/build-link-dummy" target="_blank" rel="noopener">https://teamcity/build-link-dummy</a></p>
+            </div>
+            <div class="tab-content">
+                <div id="logFilesTable" class="tab-pane active">
+                    <div class="table-header">
+                        <h3>Log Files</h3>
+                    </div>
+                    <div class="table-content"></div>
+                </div>
+                <div id="dataDependenciesTable" class="tab-pane">
+                    <div class="table-header">
+                        <h3>Data Dependencies</h3>
+                    </div>
+                    <div class="table-content"></div>
+                </div>
+                <div id="tradesTable" class="tab-pane">
+                    <div class="table-header">
+                        <h3>Trades</h3>
+                    </div>
+                    <div class="table-content"></div>
+                </div>
+                <div id="metricsTable" class="tab-pane">
+                    <div class="table-header">
+                        <h3>Metrics</h3>
+                    </div>
+                    <div class="table-content"></div>
+                </div>
+                <div id="mdmKeysTable" class="tab-pane">
+                    <div class="table-header">
+                        <h3>MDM Keys</h3>
+                    </div>
+                    <div class="table-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+    <script>
+        // Example CSV data
+        const logFilesData = `Name,Age,Score\nAlice,30,85\nBob,25,90`;
+        const dataDependenciesData = `Name,Department,Salary\nJohn,HR,50000\nJane,IT,60000`;
+        const tradesData = `Product,Price,Stock\nLaptop,1000,50\nPhone,500,200`;
+        const metricsData = `City,Population,Area\nNew York,8000000,468\nLos Angeles,4000000,503`;
+        const mdmKeysData = `Key,Description,Value\nMDM001,Market Data Key 1,12345\nMDM002,Market Data Key 2,67890\nMDM003,Market Data Key 3,54321`;
+
+        // CSV parsing function
+        function parseCSV(csv) {
+            const [headerLine, ...lines] = csv.split("\n");
+            const headers = headerLine.split(",");
+            return lines.map(line => {
+                const values = line.split(",");
+                return headers.reduce((obj, header, index) => {
+                    obj[header] = values[index];
+                    return obj;
+                }, {});
+            });
+        }
+
+        // Initialize Tabulator tables lazily
+        const initializedTables = new Set();
+
+        document.querySelectorAll('.tab-link').forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent default link behavior
+
+                const tabId = button.dataset.tab;
+                window.location.hash = tabId; // Update URL hash
+
+                document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+                button.classList.add('active');
+                const activePane = document.getElementById(tabId);
+                activePane.classList.add('active');
+
+                // Dynamically update the table name
+                const tableName = button.textContent;
+                activePane.querySelector('.table-header h3').textContent = tableName;
+
+                // Initialize Tabulator table if not already initialized
+                if (!initializedTables.has(tabId)) {
+                    const data = eval(`${tabId.replace('Table', '')}Data`); // Dynamically get the data
+                    new Tabulator(`#${tabId} .table-content`, { 
+                        data: parseCSV(data), 
+                        autoColumns: true, 
+                        layout: "fitColumns", 
+                        responsiveLayout: "collapse" // Enable responsive resizing
+                    });
+                    initializedTables.add(tabId);
+                }
+            });
+        });
+
+        // Handle tab activation based on URL hash
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.substring(1); // Get hash without '#'
+            if (hash) {
+                const targetButton = document.querySelector(`.tab-link[data-tab="${hash}"]`);
+                if (targetButton) {
+                    targetButton.click(); // Simulate click to activate tab
+                }
+            } else {
+                // Default to the first tab if no hash is present
+                document.querySelector('.tab-link').click();
+            }
+        });
+    </script>
+</body>
+</html>
