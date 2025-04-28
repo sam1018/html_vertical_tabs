@@ -182,9 +182,16 @@
             });
         }
 
-        // Initialize Tabulator tables lazily
-        const initializedTables = new Set();
+        // Map table IDs to their corresponding data
+        const tableDataMap = {
+            logFilesTable: logFilesData,
+            dataDependenciesTable: dataDependenciesData,
+            tradesTable: tradesData,
+            metricsTable: metricsData,
+            mdmKeysTable: mdmKeysData,
+        };
 
+        // Initialize Tabulator tables lazily
         document.querySelectorAll('.tab-link').forEach(button => {
             button.addEventListener('click', (event) => {
                 event.preventDefault(); // Prevent default link behavior
@@ -203,16 +210,18 @@
                 const tableName = button.textContent;
                 activePane.querySelector('.table-header h3').textContent = tableName;
 
-                // Initialize Tabulator table if not already initialized
-                if (!initializedTables.has(tabId)) {
-                    const data = eval(`${tabId.replace('Table', '')}Data`); // Dynamically get the data
-                    new Tabulator(`#${tabId} .table-content`, { 
-                        data: parseCSV(data), 
-                        autoColumns: true, 
-                        layout: "fitColumns", 
-                        responsiveLayout: "collapse" // Enable responsive resizing
-                    });
-                    initializedTables.add(tabId);
+                // Initialize Tabulator table if data exists and not already initialized
+                if (tableDataMap[tabId]) {
+                    const data = tableDataMap[tabId];
+                    if (typeof data === 'string') { // Check if data is unparsed CSV
+                        new Tabulator(`#${tabId} .table-content`, { 
+                            data: parseCSV(data), 
+                            autoColumns: true, 
+                            layout: "fitColumns", 
+                            responsiveLayout: "collapse" // Enable responsive resizing
+                        });
+                        tableDataMap[tabId] = null; // Mark as initialized
+                    }
                 }
             });
         });
