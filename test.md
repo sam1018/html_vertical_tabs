@@ -14,10 +14,11 @@ omegapython2 is a Python binding for omega/torus components that provides a brid
                   │
 ┌─────────────────▼───────────────────────────┐
 │         Python Layer                        │
-│  - Lazy function/class generation           │
+│  - Lazy function/interface generation       │
 │  - Namespace handling                       │
 │  - Omega variant wrapper classes            │
 │    (Array, Dictionary, OADate etc.)         │
+└─────────────────┬───────────────────────────┘
 └─────────────────┬───────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────┐
