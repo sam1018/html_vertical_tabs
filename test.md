@@ -76,6 +76,8 @@ You can see the full list of supported components here: //p4/depot/omegapython2/
 
 The packer/unpacker layer handles type conversion between native Python objects and omega variants. This layer is crucial for primitive types but is bypassed for complex types that use wrapper classes.
 
+'''Improvement Area:''' Currently, the <code>describe_api()</code> metadata is parsed in Python-generated code, which then calls separate packer/unpacker functions for native types. Parsing <code>describe_api()</code> directly in the C++ extension would allow the extension to handle type conversion internally, eliminating the need for generated packer/unpacker calls for native types. This would simplify the generated code and potentially improve performance by reducing the number of function calls across the Python/C++ boundary.
+
 ==== Two Approaches to Type Handling ====
 
 '''Native Python Objects (with conversion):'''
