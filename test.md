@@ -192,7 +192,9 @@ struct ApiContainerObject {
 
 ==== Primitive Types ====
 
-Value types and reference types are handled through pack/unpack functions in the C++ extension:
+
+Primitive types are handled through pack/unpack functions in the C++ extension:
+
 * '''pack_*''': Takes Python object → creates omega variant → wraps in API object → returns
 * '''unpack_*''': Takes API object → extracts omega variant → converts to Python object → returns
 
