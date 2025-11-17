@@ -64,7 +64,7 @@ When <code>library_paths()</code> is called, the following steps occur:
 #: Populates internal lists while handling namespaces
 #: Updates <code>__all__</code> metadata for IntelliSense support
 #: Adds common types to the module
-# '''Lazy Generation''': Functions and interfaces are not immediately added to the module; they are generated on-demand when first accessed
+# '''Lazy Generation''': Functions and types from IDL are not immediately added to the module; they are generated on-demand when first accessed
 
 ==== Supported Components ====
 
