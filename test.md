@@ -34,7 +34,7 @@ omegapython2 is a Python binding for omega/torus components that provides a brid
 └─────────────────┬───────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────┐
-│    omega/torus Native Libraries       │
+│    omega/torus Native Libraries             │
 └─────────────────────────────────────────────┘
 </pre>
 
@@ -55,13 +55,13 @@ When <code>library_paths()</code> is called, the following steps occur:
 
 # '''Create Invoker''': Calls <code>_omega_interface.create_invoker()</code> to load the DLL and receive an invoker object
 # '''API Discovery''': Calls <code>describe_api()</code> library function that returns metadata about:
-#* All functions with their argument and return types
-#* Types (enums, unions, interfaces)
-#* Classes and their properties
+#: All functions with their argument and return types
+#: Types (enums, unions, interfaces)
+#: Classes and their properties
 # '''Module Population''': 
-#* Populates internal lists while handling namespaces
-#* Updates <code>__all__</code> metadata for IntelliSense support
-#* Adds common types to the module
+#: Populates internal lists while handling namespaces
+#: Updates <code>__all__</code> metadata for IntelliSense support
+#: Adds common types to the module
 # '''Lazy Generation''': Functions and interfaces are not immediately added to the module; they are generated on-demand when first accessed
 
 ==== Supported Components ====
@@ -247,9 +247,7 @@ To prevent memory leaks from Python object reference counting errors in the C++ 
 * '''Automatic Reference Management''': When <code>py_obj_ref_t</code> goes out of scope, it automatically decrements the Python object's reference count
 * '''Convenience Functions''':
 ** Create from new reference: When receiving a new reference from Python C API (e.g., from <code>PyLong_FromLong()</code>)
-** Create from borrowed reference: When receiving a borrowed reference that needs to be retained (increments reference count)
-
-This ensures proper Python reference counting throughout the C++ extension code, preventing memory leaks on the Python side.
+** Create from borrowed reference: When receiving a borrowed reference that needs to be retained (increments reference count)This ensures proper Python reference counting throughout the C++ extension code, preventing memory leaks on the Python side.
 
 ==== Memory Leak Detection ====
 
@@ -296,18 +294,18 @@ return create_api_object(result);
 # '''User calls function''' in Python: <code>result = omega.core.func("hello")</code>
 # '''Python layer''': Lazy generation executes (if first call) to create the function
 # '''Packer''': <code>pack_str("hello")</code> is called
-#* Creates <code>ApiReferenceObject</code> wrapping omega string variant
-#* Returns PyObject*
+#: Creates <code>ApiReferenceObject</code> wrapping omega string variant
+#: Returns PyObject*
 # '''C++ Extension''': <code>call_library(entry_point, packed_arg)</code>
-#* Extracts omega variant from API object (with GIL held)
-#* Releases GIL
-#* Calls native omega library function
-#* Reacquires GIL
-#* Wraps the returned omega variant in an API object
+#: Extracts omega variant from API object (with GIL held)
+#: Releases GIL
+#: Calls native omega library function
+#: Reacquires GIL
+#: Wraps the returned omega variant in an API object
 # '''Unpacker''': <code>unpack_str(result)</code> is called
-#* Extracts the omega variant from the API object
-#* Converts it to a PyUnicode object
-#* Returns the Python string
+#: Extracts the omega variant from the API object
+#: Converts it to a PyUnicode object
+#: Returns the Python string
 # '''User receives''' Python string result
 
 '''Note:''' Both packer and unpacker functions are implemented in the C++ extension module (<code>_omega_interface</code>).
