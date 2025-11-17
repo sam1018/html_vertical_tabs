@@ -16,7 +16,7 @@ omegapython2 is a Python binding for omega/torus components that provides a brid
 │         Python Layer                        │
 │  - Lazy function/class generation           │
 │  - Namespace handling                       │
-│  - Type wrappers (Array, Dictionary, etc.)  │
+│  - Omega variant wrappers (Array, Dictionary, etc.)  │
 └─────────────────┬───────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────┐
@@ -34,7 +34,7 @@ omegapython2 is a Python binding for omega/torus components that provides a brid
 └─────────────────┬───────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────┐
-│    omega/torus Native Libraries (DLLs)      │
+│    omega/torus Native Libraries       │
 └─────────────────────────────────────────────┘
 </pre>
 
@@ -55,21 +55,20 @@ When <code>library_paths()</code> is called, the following steps occur:
 
 # '''Create Invoker''': Calls <code>_omega_interface.create_invoker()</code> to load the DLL and receive an invoker object
 # '''API Discovery''': Calls <code>describe_api()</code> library function that returns metadata about:
-#* All functions in the library
+#* All functions with their argument and return types
 #* Types (enums, unions, interfaces)
 #* Classes and their properties
 # '''Module Population''': 
 #* Populates internal lists while handling namespaces
 #* Updates <code>__all__</code> metadata for IntelliSense support
 #* Adds common types to the module
-# '''Lazy Generation''': Functions and classes are not immediately added to the module; they are generated on-demand through <code>exec()</code> when first accessed
+# '''Lazy Generation''': Functions and interfaces are not immediately added to the module; they are generated on-demand when first accessed
 
 ==== Supported Components ====
 
-omegapython2 supports multiple predefined components including:
-* <code>omega.core</code>
-* <code>torus.data</code>
-* And other omega/torus components
+omegapython2 supports multiple predefined components. Each component corresponds to an omega/torus library that can be loaded independently.
+
+You can see the full list of supported components here: //p4/depot/omegapython2/components.json
 
 === Packer/Unpacker Layer ===
 
@@ -105,9 +104,9 @@ def func(s: str) -> str:
 | string || PyUnicode || Reference || pack_str / unpack_str
 |-
 | void || Py_None || Value || pack_void / unpack_void
-|-
-| date || datetime || Value (OADate) || pack_date / unpack_date
 |}
+
+'''Complex Types:''' For date, dictionary, and array types, omegapython2 provides wrapper classes (<code>OADate</code>, <code>Dictionary</code>, <code>Array</code>) that encapsulate omega variants and provide Pythonic interfaces.
 
 === API Objects (C++ Extension) ===
 
@@ -134,9 +133,9 @@ struct ApiContainerObject {
 };
 </syntaxhighlight>
 
-* '''ApiValueObject''': Wraps omega value types (int, double, bool, void, date)
-* '''ApiReferenceObject''': Wraps omega reference types (string, binary) with reference counting
-* '''ApiContainerObject''': Wraps omega container types (arrays, dictionaries) with element type information
+* '''ApiValueObject''': Wraps omega value types (int, double, bool, void, date). These objects contain the variant directly.
+* '''ApiReferenceObject''': Wraps omega reference types (string, binary, dictionaries) with reference counting. Contains an <code>ApiValueObject</code> plus a deallocator.
+* '''ApiContainerObject''': Wraps omega array types with element type and dimension information. Contains an <code>ApiReferenceObject</code> plus metadata about the array structure.
 
 === Type System Implementation ===
 
@@ -190,9 +189,9 @@ The <code>Array</code> class wraps omega array variants. Arrays are typed based 
 * Implementation: Creates <code>std::vector</code>, populates by casting elements, passes memory to omega variant
 
 ;From NumPy Arrays
-* Uses NumPy's <code>ascontiguousarray()</code> to get memory pointer
-* <code>_invoker.array_create_from_pointer()</code> copies memory into omega variant
-* Omega variant takes ownership of the memory
+* Uses NumPy's <code>ascontiguousarray()</code> to obtain a contiguous memory pointer
+* <code>_invoker.array_create_from_pointer()</code> copies the memory contents
+* The copied memory is passed to the omega variant, which takes ownership
 
 ==== Classes and Interfaces ====
 
@@ -219,17 +218,19 @@ def TestObjF(DoubleVal: float) -> omega.core.test_object:
 
 ==== OADate ====
 
-The <code>OADate</code> type wraps omega date variants. On the Python side, it appears as <code>datetime.datetime</code> objects, while in the C++ extension it's stored as <code>ApiValueObject</code> containing a float.
+The <code>OADate</code> type wraps omega date variants. On the Python side, <code>OADate</code> provides conversion methods to and from <code>datetime.datetime</code> objects, enabling seamless integration with Python's standard datetime library.
 
 === Memory Management ===
+
+Memory safety in omegapython2 is addressed at two levels: omega variant memory and Python object memory.
 
 ==== Python GC Integration ====
 
 API objects are Python objects managed by Python's garbage collector. Deallocation hooks are implemented for each API object type:
 
-* '''ApiValueObject dealloc''': Destroys the wrapped omega variant
-* '''ApiReferenceObject dealloc''': Decrements the omega framework's reference count
-* '''ApiContainerObject dealloc''': Inherits reference object deallocation
+* '''ApiValueObject dealloc''': Destroys the wrapped omega variant and deallocates the Python object
+* '''ApiReferenceObject dealloc''': Decrements the omega variant's reference count (allowing omega framework to manage cleanup) and deallocates the Python object
+* '''ApiContainerObject dealloc''': Inherits reference object deallocation behavior
 
 ==== Omega Reference Counting ====
 
@@ -238,9 +239,34 @@ The omega framework provides reference counting for all omega objects. The Pytho
 * When Python GC deallocates a reference object, the reference count is decremented
 * Omega framework manages the actual memory lifecycle
 
+==== Python Object Memory Safety ====
+
+To prevent memory leaks from Python object reference counting errors in the C++ extension, omegapython2 uses the <code>py_obj_ref_t</code> wrapper class:
+
+* '''RAII Pattern''': <code>py_obj_ref_t</code> provides automatic resource management for Python objects (PyObject*) using RAII (Resource Acquisition Is Initialization)
+* '''Automatic Reference Management''': When <code>py_obj_ref_t</code> goes out of scope, it automatically decrements the Python object's reference count
+* '''Convenience Functions''':
+** Create from new reference: When receiving a new reference from Python C API (e.g., from <code>PyLong_FromLong()</code>)
+** Create from borrowed reference: When receiving a borrowed reference that needs to be retained (increments reference count)
+
+This ensures proper Python reference counting throughout the C++ extension code, preventing memory leaks on the Python side.
+
 ==== Memory Leak Detection ====
 
-Python tests validate memory integrity by checking omega object counts before and after each test execution. This ensures no memory leaks occur across the Python-C++ boundary.
+'''Omega Side:''' Python tests validate memory integrity by checking omega object counts before and after each test execution. This ensures no memory leaks occur from omega variants across the Python-C++ boundary.
+
+<syntaxhighlight lang="python">
+ref_count_before = omega.core.ref_count()
+run_test()
+ref_count_after = omega.core.ref_count()
+assert ref_count_before == ref_count_after
+</syntaxhighlight>
+
+'''Note:''' The reference count checker runs in debug builds only.
+
+'''Python Side:''' The <code>py_obj_ref_t</code> wrapper provides automated memory safety through RAII, preventing Python object leaks in the C++ extension.
+
+'''Future Improvements:''' Integration with Valgrind for comprehensive memory leak detection across both Python and native code boundaries.
 
 === Concurrency - GIL Handling ===
 
@@ -249,13 +275,18 @@ The Global Interpreter Lock (GIL) is released before making omega library calls,
 * Concurrent execution of multiple omega library calls from different Python threads
 * Prevention of Python interpreter blocking during long-running omega operations
 
-Implementation pattern:
+Implementation pattern in C++ extension:
 <syntaxhighlight lang="cpp">
-// In C++ extension
+// Extract omega variants from API objects (with GIL held)
+omega::core::api::variant arg = extract_variant(api_object);
+
+// Release GIL before calling omega library
 Py_BEGIN_ALLOW_THREADS
-// Call omega library function
-result = omega_library_call(args);
+omega::core::api::variant result = omega_library_call(arg);
 Py_END_ALLOW_THREADS
+
+// Wrap result in API object (with GIL held)
+return create_api_object(result);
 </syntaxhighlight>
 
 == Data Flow Example ==
@@ -268,34 +299,15 @@ Py_END_ALLOW_THREADS
 #* Creates <code>ApiReferenceObject</code> wrapping omega string variant
 #* Returns PyObject*
 # '''C++ Extension''': <code>call_library(entry_point, packed_arg)</code>
+#* Extracts omega variant from API object (with GIL held)
 #* Releases GIL
-#* Extracts omega variant from API object
 #* Calls native omega library function
 #* Reacquires GIL
-#* Returns result as API object
+#* Wraps the returned omega variant in an API object
 # '''Unpacker''': <code>unpack_str(result)</code> is called
-#* Extracts omega variant from API object
-#* Converts to Python string
-#* Returns PyUnicode object
+#* Extracts the omega variant from the API object
+#* Converts it to a PyUnicode object
+#* Returns the Python string
 # '''User receives''' Python string result
 
-== Key Design Principles ==
-
-# '''Lazy Evaluation''': Functions and classes are generated only when first accessed, improving load times
-# '''Type Safety''': Strong type mapping between Python and omega ensures correct data conversion
-# '''Memory Safety''': Dual memory management (Python GC + omega ref counting) prevents leaks
-# '''Performance''': GIL release during library calls enables better concurrency
-# '''Convenience''': Union type resolution and array creation from Python/NumPy structures provide ergonomic APIs
-# '''Transparency''': API discovery via <code>describe_api()</code> keeps bindings in sync with library changes
-
-== Extension Points ==
-
-The architecture supports extension through:
-* Adding new component modules (following the <code>omega.core</code> pattern)
-* Implementing additional type wrappers (similar to <code>Dictionary</code>, <code>Array</code>, <code>OADate</code>)
-* Custom packer/unpacker pairs for specialized types
-* Enhanced memory tracking and debugging hooks
-
-== Summary ==
-
-omegapython2's architecture provides a robust, efficient bridge between Python and omega/torus native libraries. The layered design separates concerns clearly: the Python layer handles user interaction and lazy generation, the packer/unpacker layer manages type conversion, the C++ extension provides performance-critical operations and memory management, and the GIL handling ensures good concurrency characteristics. This design enables Python developers to work with omega/torus components using Pythonic idioms while maintaining the performance and type safety of the underlying C++ libraries.
+'''Note:''' Both packer and unpacker functions are implemented in the C++ extension module (<code>_omega_interface</code>).
