@@ -74,9 +74,26 @@ You can see the full list of supported components here: //p4/depot/omegapython2/
 
 === Packer/Unpacker Layer ===
 
-The packer/unpacker layer handles type conversion between Python objects and omega variants.
+The packer/unpacker layer handles type conversion between native Python objects and omega variants. This layer is crucial for primitive types but is bypassed for complex types that use wrapper classes.
+
+==== Two Approaches to Type Handling ====
+
+'''Native Python Objects (with conversion):'''
+* For primitive types (int, float, str, bytes, bool, None), the C++ extension converts between native Python objects and omega variants
+* '''Packer''': Converts native Python object → omega variant → wraps in API object
+* '''Unpacker''': Extracts omega variant → converts to native Python object → returns
+* Types: <code>int</code>, <code>float</code>, <code>str</code>, <code>bytes</code>, <code>bool</code>, <code>None</code>
+
+'''API Object Wrappers (without conversion):'''
+* For complex types (arrays, dictionaries, dates), omegapython2 provides wrapper classes that directly encapsulate omega variants
+* Classes: <code>Array</code>, <code>Dictionary</code>, <code>OADate</code>
+* These wrappers model Python's <code>list</code>/<code>dict</code> interfaces while keeping data in omega variant format
+* '''Advantage''': No conversion overhead when passing these objects between library function calls
+* The omega variant stays wrapped in the API object throughout its lifetime
 
 ==== Example Function Call Flow ====
+
+'''Example 1: Native Python Object (with conversion)'''
 
 For an IDL function defined as <code>string func(string s)</code>:
 
@@ -85,12 +102,32 @@ For an IDL function defined as <code>string func(string s)</code>:
 entry_point = omega.core._invoker.get_entrypoint("func")
 
 def func(s: str) -> str:
-    packed = omega.core._invoker.pack_str(s)
+    packed = omega.core._invoker.pack_str(s)      # Convert str → omega variant
     res = omega.core._invoker.call_library(entry_point, packed)
-    return omega.core._invoker.unpack_str(res)
+    return omega.core._invoker.unpack_str(res)    # Convert omega variant → str
 </syntaxhighlight>
 
+The string is converted to an omega variant on input and back to a Python string on output.
+
+'''Example 2: API Object Wrapper (without conversion)'''
+
+For an IDL function defined as <code>array<double> process(array<double> arr)</code>:
+
+<syntaxhighlight lang="python">
+# Generated code (simplified)
+entry_point = omega.core._invoker.get_entrypoint("process")
+
+def process(arr: Array) -> Array:
+    api_obj = arr._api_object                      # Extract wrapped omega variant
+    res = omega.core._invoker.call_library(entry_point, api_obj)
+    return Array(res)                               # Wrap result in Array class
+</syntaxhighlight>
+
+The omega variant is never converted to a native Python list. It remains wrapped in API objects throughout the call chain, avoiding conversion overhead.
+
 ==== Type Mapping ====
+
+'''Primitive Types (Native Python Objects - with conversion):'''
 
 {| class="wikitable"
 ! Omega Type !! Python Type !! API Object Type !! Pack/Unpack
@@ -108,7 +145,19 @@ def func(s: str) -> str:
 | void || Py_None || Value || pack_void / unpack_void
 |}
 
-'''Complex Types:''' For date, dictionary, and array types, omegapython2 provides wrapper classes (<code>OADate</code>, <code>Dictionary</code>, <code>Array</code>) that encapsulate omega variants and provide Pythonic interfaces.
+'''Complex Types (API Object Wrappers - without conversion):'''
+
+{| class="wikitable"
+! Omega Type !! Python Wrapper Class !! API Object Type !! Conversion
+|-
+| array<T> || Array || Container || Direct wrapping
+|-
+| dictionary || Dictionary || Reference || Direct wrapping
+|-
+| date || OADate || Value || Direct wrapping
+|}
+
+These wrapper classes provide Pythonic interfaces (similar to <code>list</code> and <code>dict</code>) while keeping the data in omega variant format. This eliminates conversion overhead when passing these objects between library function calls.
 
 === API Objects (C++ Extension) ===
 
@@ -178,11 +227,21 @@ When calling <code>x = testing_union("abc")</code>, the function returns a strin
 
 ==== Dictionary ====
 
-The <code>Dictionary</code> class wraps omega dictionary variants and provides convenience functions for working with Python's native dict objects.
+The <code>Dictionary</code> class wraps omega dictionary variants and provides a dict-like interface.
+
+* '''Design Rationale''': Instead of converting omega dictionaries to Python <code>dict</code> objects, <code>Dictionary</code> keeps the data in omega variant format
+* '''Performance Benefit''': When passing dictionaries between library function calls, no conversion overhead is incurred
+* '''Interface''': Provides convenience methods that model Python's <code>dict</code> interface (e.g., <code>__getitem__</code>, <code>__setitem__</code>, <code>keys()</code>, <code>values()</code>)
+* '''Conversion''': Can convert to/from native Python <code>dict</code> when needed for interoperability
 
 ==== Arrays ====
 
 The <code>Array</code> class wraps omega array variants. Arrays are typed based on dimension and element type.
+
+* '''Design Rationale''': Instead of converting omega arrays to Python <code>list</code> objects, <code>Array</code> keeps the data in omega variant format
+* '''Performance Benefit''': When passing arrays between library function calls, no conversion overhead is incurred. The omega variant remains wrapped throughout the call chain.
+* '''Interface''': Provides list-like operations (indexing, slicing, iteration) while maintaining the underlying omega array structure
+* '''Type Safety''': Arrays maintain element type and dimension information from the omega type system
 
 '''Array Creation Methods:'''
 
@@ -220,7 +279,36 @@ def TestObjF(DoubleVal: float) -> omega.core.test_object:
 
 ==== OADate ====
 
-The <code>OADate</code> type wraps omega date variants. On the Python side, <code>OADate</code> provides conversion methods to and from <code>datetime.datetime</code> objects, enabling seamless integration with Python's standard datetime library.
+The <code>OADate</code> type wraps omega date variants.
+
+* '''Design Rationale''': Instead of always converting to <code>datetime.datetime</code>, <code>OADate</code> keeps the date in omega variant format
+* '''Performance Benefit''': When passing dates between library function calls, the omega variant is passed directly without conversion
+* '''Interface''': Provides conversion methods to and from <code>datetime.datetime</code> objects for interoperability with Python's standard datetime library
+* '''Storage''': Internally stored as a float in the omega date format
+
+==== Performance Implications ====
+
+'''Primitive Types:'''
+* Conversion overhead on every function call boundary
+* Acceptable for small, simple types (int, float, string)
+* Example: Passing a string requires packing and unpacking
+
+'''Wrapper Classes:'''
+* No conversion overhead when passing between library functions
+* Significant performance benefit for large data structures
+* Example workflow:
+<syntaxhighlight lang="python">
+# Create array once (conversion from Python list)
+arr = Array([1.0, 2.0, 3.0])
+
+# Pass through multiple function calls without conversion
+result1 = omega.core.func1(arr)  # No conversion - passes omega variant
+result2 = omega.core.func2(result1)  # No conversion - passes omega variant
+result3 = omega.core.func3(result2)  # No conversion - passes omega variant
+
+# Convert to Python list only when needed
+final_list = result3.to_list()  # Conversion only at the end
+</syntaxhighlight>
 
 === Memory Management ===
 
