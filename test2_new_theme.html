@@ -109,6 +109,7 @@
             <button class="tab-link" type="button" data-tab="tradesTable">Trades</button>
             <button class="tab-link" type="button" data-tab="metricsTable">Metrics</button>
             <button class="tab-link" type="button" data-tab="mdmKeysTable">MDM Keys</button>
+            <button class="tab-link" type="button" data-tab="coreDumpsTab">Core Dumps</button>
             <button class="tab-link" type="button" data-tab="downloadsTab">Downloads</button>
         </div>
         <div class="main-content">
@@ -149,6 +150,12 @@
                     </div>
                     <div class="table-content"></div>
                 </div>
+                <div id="coreDumpsTab" class="tab-pane">
+                    <div class="table-header">
+                        <h3>Core Dumps</h3>
+                    </div>
+                    <div class="table-content" id="coreDumpsContent"></div>
+                </div>
                 <div id="downloadsTab" class="tab-pane">
                     <div class="table-header">
                         <h3>Downloads</h3>
@@ -168,6 +175,12 @@
     <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
     <script>
         // Example CSV data
+        // Core dump metadata (populated by external Python script)
+        const coreDumpPackageUrl = 'https://example.com/core-dumps/package.zip';
+        const coreDumpWikiUrl = 'https://wiki.example.com/core-dumps';
+        const coreDumpPublishedLimit = 1;
+        const coreDumpPublishedCount = 1;
+
         const logFilesData = `Name,Age,Score\nAlice,30,85\nBob,25,90`;
         const dataDependenciesData = `Name,Department,Salary\nJohn,HR,50000\nJane,IT,60000`;
         const tradesData = `Product,Price,Stock\nLaptop,1000,50\nPhone,500,200`;
@@ -195,6 +208,26 @@
             metricsTable: metricsData,
             mdmKeysTable: mdmKeysData,
         };
+
+        function renderCoreDumpSection() {
+            const container = document.getElementById('coreDumpsContent');
+            if (!container) return;
+
+            const parts = [];
+            parts.push(`<p style="color:#555; font-size:14px; margin:0 0 8px 0;">Limit: up to ${coreDumpPublishedLimit} published core dump(s) per build.</p>`);
+
+            if (coreDumpPublishedCount > 0 && coreDumpPackageUrl) {
+                parts.push(`<p><a href="${coreDumpPackageUrl}" target="_blank" rel="noopener">Download core dump package (${coreDumpPublishedCount} available)</a></p>`);
+            } else {
+                parts.push('<p>No core dumps were published for this build.</p>');
+            }
+
+            if (coreDumpWikiUrl) {
+                parts.push(`<p><a href="${coreDumpWikiUrl}" target="_blank" rel="noopener">How to open core dumps (wiki)</a></p>`);
+            }
+
+            container.innerHTML = parts.join('');
+        }
 
         // Initialize Tabulator tables lazily
         document.querySelectorAll('.tab-link').forEach(button => {
@@ -277,6 +310,8 @@
             event.preventDefault();
             downloadCSV('MdmKeys.csv', mdmKeysData);
         });
+
+        renderCoreDumpSection();
     </script>
 </body>
 </html>
