@@ -218,7 +218,7 @@
 
             if (coreDumpPublishedCount > 0 && coreDumpPackageUrl) {
                 parts.push(`<p><a href="${coreDumpPackageUrl}" target="_blank" rel="noopener">Download zip containing core dump from here</a></p>`);
-                parts.push('<p style="color:#d9534f; font-size:12px; margin:5px 0;"><strong>Note:</strong> If you are not logged in, you will be redirected to the login page. After logging in, please click the link again to access the search results.</p>');
+                parts.push('<p style="color:#d9534f; font-size:12px; margin:5px 0;"><strong>Note:</strong> If you are not logged in to mynexusrepo, you will be redirected to the login page. After logging in, please click the link again to access the search results. Then go to the <strong>Artifacts</strong> tab (bottom right side of the page) and click the <strong>Download</strong> button to download the zip.</p>');
             } else {
                 parts.push('<p>No core dumps were published for this build.</p>');
             }
