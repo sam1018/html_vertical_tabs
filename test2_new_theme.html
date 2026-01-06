@@ -176,7 +176,7 @@
     <script>
         // Example CSV data
         // Core dump metadata (populated by external Python script)
-        const coreDumpPackageUrl = 'https://mynexusrepo/download/package.zip';
+        const coreDumpPackageUrl = 'https://mynexusrepo/#nexus-search;gav~mygav~myartifact~myversion~~';
         const coreDumpWikiUrl = 'https://wiki.example.com/core-dumps';
         const coreDumpPublishedLimit = 1;
         const coreDumpPublishedCount = 1;
@@ -217,8 +217,8 @@
             parts.push(`<p style="color:#555; font-size:14px; margin:0 0 8px 0;">Limit: up to ${coreDumpPublishedLimit} published core dump(s) per build.</p>`);
 
             if (coreDumpPublishedCount > 0 && coreDumpPackageUrl) {
-                parts.push(`<p><a href="${coreDumpPackageUrl}" target="_blank" rel="noopener">Download core dump package (${coreDumpPublishedCount} available)</a></p>`);
-                parts.push('<p style="color:#d9534f; font-size:12px; margin:5px 0;"><strong>Note:</strong> If you get a 401 error, please <a href="https://mynexusrepo" target="_blank" rel="noopener">login to Nexus</a> first.</p>');
+                parts.push(`<p><a href="${coreDumpPackageUrl}" target="_blank" rel="noopener">Download zip containing core dump from here</a></p>`);
+                parts.push('<p style="color:#d9534f; font-size:12px; margin:5px 0;"><strong>Note:</strong> If you are not logged in, you will be redirected to the login page. After logging in, please click the link again to access the search results.</p>');
             } else {
                 parts.push('<p>No core dumps were published for this build.</p>');
             }
